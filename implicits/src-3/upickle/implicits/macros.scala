@@ -39,7 +39,7 @@ end summonList
 def extractKey[A](using Quotes)(sym: quotes.reflect.Symbol): Option[String] =
   import quotes.reflect._
   sym
-    .annots
+    .annotations // TODO: try use `getAnnotation` for performance
     .find(_.tpe =:= TypeRepr.of[upickle.implicits.key])
     .map{case Apply(_, Literal(Constant.String(s)) :: Nil) => s}
 end extractKey
