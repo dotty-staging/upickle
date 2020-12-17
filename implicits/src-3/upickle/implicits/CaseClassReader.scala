@@ -1,7 +1,7 @@
 package upickle.implicits
 
 import compiletime.{summonInline}
-import deriving.{ArrayProduct, Mirror}
+import deriving.Mirror
 import upickle.core.{ Visitor, ObjVisitor, Annotator }
 
 trait CaseClassReaderPiece extends MacrosCommon:
@@ -64,7 +64,7 @@ trait CaseClassReaderPiece extends MacrosCommon:
           if (!missingKeys.isEmpty) {
             throw new upickle.core.Abort("missing keys in dictionary: " + missingKeys.mkString(", "))
           }
-          m.fromProduct(ArrayProduct(values.toArray))
+          m.fromProduct(Tuple.fromArray(values.toArray))
         end make
       }
 
