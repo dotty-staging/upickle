@@ -35,6 +35,15 @@ trait CommonModule extends ScalaModule {
     super.sources() ++
     Seq(PathRef(millSourcePath / s"src-$platformSegment"))
   }
+
+  override def docJar =
+    T {
+      val outDir = T.ctx().dest
+      val javadocDir = outDir / 'javadoc
+      os.makeDir.all(javadocDir)
+      mill.api.Result.Success(mill.modules.Jvm.createJar(Agg(javadocDir))(outDir))
+    }
+
 }
 trait CommonPublishModule extends CommonModule with PublishModule with CrossScalaModule{
   def publishVersion = "1.2.2"
