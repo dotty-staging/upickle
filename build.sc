@@ -47,7 +47,7 @@ trait CommonModule extends ScalaModule {
 }
 trait CommonPublishModule extends CommonModule with PublishModule with CrossScalaModule{
 
-  def publishVersion = VcsVersion.vcsState().format()
+  def publishVersion = "cb-SNAPSHOT" // hardcoded version for the community build
   def isDotty = crossScalaVersion.startsWith("0") || crossScalaVersion.startsWith("3")
   def pomSettings = PomSettings(
     description = artifactName(),
@@ -76,11 +76,19 @@ trait CommonPublishModule extends CommonModule with PublishModule with CrossScal
     Seq(PathRef(T.dest))
   }
   trait CommonTestModule extends CommonModule with TestModule{
-    def ivyDeps = Agg(ivy"com.lihaoyi::utest::0.7.7") ++ (
+    def ivyDeps = Agg(ivy"com.lihaoyi::utest::cb-SNAPSHOT") ++ (
       if (isDotty) Agg.empty[mill.scalalib.Dep]
       else Agg(ivy"com.lihaoyi::acyclic:0.2.0")
     )
     def testFrameworks = Seq("upickle.core.UTestFramework")
+  }
+
+  // FIXME: community-build
+  override def docJar = T {
+    val outDir = T.ctx().dest
+    val javadocDir = outDir / 'javadoc
+    os.makeDir.all(javadocDir)
+    mill.api.Result.Success(mill.modules.Jvm.createJar(Agg(javadocDir))(outDir))
   }
 }
 
@@ -115,7 +123,7 @@ trait CommonNativeModule extends CommonPublishModule with ScalaNativeModule{
 
 trait CommonCoreModule extends CommonPublishModule {
   def artifactName = "upickle-core"
-  def ivyDeps = Agg(ivy"com.lihaoyi::geny::0.6.6")
+  def ivyDeps = Agg(ivy"com.lihaoyi::geny::cb-SNAPSHOT")
 }
 object core extends Module {
   object js extends Cross[CoreJsModule](scalaJSVersions:_*)
@@ -398,7 +406,7 @@ trait BenchModule extends CommonModule{
     ivy"com.typesafe.play::play-json::2.9.2",
     ivy"io.argonaut::argonaut:6.2.3",
     ivy"org.json4s::json4s-ast:3.6.7",
-    ivy"com.lihaoyi::sourcecode::0.2.4",
+    ivy"com.lihaoyi::sourcecode::cb-SNAPSHOT",
   )
 }
 
@@ -430,7 +438,7 @@ object bench extends Module {
     def platformSegment = "native"
     def scalaNativeVersion = "0.4.0"
     def moduleDeps = Seq(upickle.native(scala213, "0.4.0").test)
-    def ivyDeps = Agg(ivy"com.lihaoyi::sourcecode::0.2.4")
+    def ivyDeps = Agg(ivy"com.lihaoyi::sourcecode::cb-SNAPSHOT")
     def allSourceFiles = T(super.allSourceFiles().filter(_.path.last != "NonNative.scala"))
     def releaseMode = ReleaseMode.ReleaseFast
     def nativeLTO = LTO.Thin
