@@ -46,7 +46,7 @@ trait CommonModule extends ScalaModule {
 }
 trait CommonPublishModule extends CommonModule with PublishModule with CrossScalaModule{
 
-  def publishVersion = VcsVersion.vcsState().format()
+  def publishVersion = "cb-SNAPSHOT" // hardcoded version for the community build
   def isDotty = crossScalaVersion.startsWith("0") || crossScalaVersion.startsWith("3")
   def pomSettings = PomSettings(
     description = artifactName(),
@@ -75,7 +75,7 @@ trait CommonPublishModule extends CommonModule with PublishModule with CrossScal
     Seq(PathRef(T.dest))
   }
   trait CommonTestModule extends CommonModule with TestModule{
-    def ivyDeps = Agg(ivy"com.lihaoyi::utest::0.7.7") ++ (
+    def ivyDeps = Agg(ivy"com.lihaoyi::utest::cb-SNAPSHOT") ++ (
       if (isDotty) Agg.empty[mill.scalalib.Dep]
       else Agg(ivy"com.lihaoyi::acyclic:0.2.0")
     )
@@ -126,7 +126,7 @@ trait CommonNativeModule extends CommonPublishModule with ScalaNativeModule{
 
 trait CommonCoreModule extends CommonPublishModule {
   def artifactName = "upickle-core"
-  def ivyDeps = Agg(ivy"com.lihaoyi::geny::0.6.5")
+  def ivyDeps = Agg(ivy"com.lihaoyi::geny::cb-SNAPSHOT")
 }
 object core extends Module {
   object js extends Cross[CoreJsModule](scalaJSVersions:_*)
