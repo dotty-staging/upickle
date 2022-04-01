@@ -244,7 +244,7 @@ trait AttributeTagged extends Api with Annotator{
             throw new Abort("invalid tag for tagged object: " + typeName)
           }
           val fastCtx = facade0.visitObject(-1, index)
-          context = fastCtx
+          context = fastCtx.narrow
           fastPath = true
         }
       }
@@ -259,7 +259,7 @@ trait AttributeTagged extends Api with Annotator{
           if (delegate == null){
             throw new AbortException("invalid tag for tagged object: " + key, keyAttr.index, -1, -1, null)
           }
-          val ctx2 = delegate.visitObject(-1, -1)
+          val ctx2 = delegate.visitObject(-1, -1).narrow
           for (p <- x.value0) {
             val (k0, v) = p
             val k = k0.toString

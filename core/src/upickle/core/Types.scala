@@ -17,7 +17,7 @@ trait Types{ types =>
   trait ReadWriter[T] extends Reader[T] with Writer[T]{
     override def narrow[K] = this.asInstanceOf[ReadWriter[K]]
     def bimap[V](f: V => T, g: T => V): ReadWriter[V] = {
-      new Visitor.MapReader[Any, T, V](ReadWriter.this) with ReadWriter[V]{
+      new Visitor.MapReader[Nothing, T, V](ReadWriter.this) with ReadWriter[V]{
         def write0[Z](out: Visitor[_, Z], v: V) = {
           ReadWriter.this.write(out, f(v.asInstanceOf[V]))
         }
@@ -48,7 +48,7 @@ trait Types{ types =>
         }
 
       case _ =>
-        new Visitor.Delegate[Any, T](r0) with ReadWriter[T]{
+        new Visitor.Delegate[Nothing, T](r0) with ReadWriter[T]{
           def write0[V](out: Visitor[_, V], v: T) = w0.write(out, v)
         }
     }
@@ -58,7 +58,7 @@ trait Types{ types =>
     * A Reader that throws an error for all the visit methods which it does not define,
     * letting you only define the handlers you care about.
     */
-  trait SimpleReader[T] extends Reader[T] with upickle.core.SimpleVisitor[Any, T]
+  trait SimpleReader[T] extends Reader[T] with upickle.core.SimpleVisitor[Nothing, T]
 
   /**
     * Represents the ability to read a value of type [[T]].
@@ -66,12 +66,12 @@ trait Types{ types =>
     * A thin wrapper around [[Visitor]], but needs to be it's own class in order
     * to make type inference automatically pick up it's implicit values.
     */
-  trait Reader[T] extends upickle.core.Visitor[Any, T]{
+  trait Reader[T] extends upickle.core.Visitor[Nothing, T]{
 
-    override def map[Z](f: T => Z): Reader[Z] = new Reader.MapReader[T, T, Z](Reader.this){
+    override def map[Z](f: T => Z): Reader[Z] = new Reader.MapReader[Nothing, T, Z](Reader.this){
       def mapNonNullsFunction(v: T): Z = f(v)
     }
-    override def mapNulls[Z](f: T => Z): Reader[Z] = new Reader.MapReader[T, T, Z](Reader.this){
+    override def mapNulls[Z](f: T => Z): Reader[Z] = new Reader.MapReader[Nothing, T, Z](Reader.this){
       override def mapFunction(v: T): Z = f(v)
       def mapNonNullsFunction(v: T): Z = f(v)
     }
@@ -82,8 +82,13 @@ trait Types{ types =>
   object Reader{
     class Delegate[T, V](delegatedReader: Visitor[T, V])
       extends Visitor.Delegate[T, V](delegatedReader) with Reader[V]{
-      override def visitObject(length: Int, index: Int) = super.visitObject(length, index).asInstanceOf[ObjVisitor[Any, V]]
-      override def visitArray(length: Int, index: Int) = super.visitArray(length, index).asInstanceOf[ArrVisitor[Any, V]]
+      override def map[A](f: V => A): Reader[A] & Visitor[T, A] = new Reader.MapReader[T, V, A](Delegate.this){
+        def mapNonNullsFunction(v: V): A = f(v)
+      }
+      override def mapNulls[A](f: V => A): Reader[A] & Visitor[T, A] = new Reader.MapReader[T, V, A](Delegate.this){
+        override def mapFunction(v: V): A = f(v)
+        def mapNonNullsFunction(v: V): A = f(v)
+      }
     }
 
     abstract class MapReader[-T, V, Z](delegatedReader: Visitor[T, V])
@@ -91,8 +96,13 @@ trait Types{ types =>
 
       def mapNonNullsFunction(t: V): Z
 
-      override def visitObject(length: Int, index: Int) = super.visitObject(length, index).asInstanceOf[ObjVisitor[Any, Z]]
-      override def visitArray(length: Int, index: Int) = super.visitArray(length, index).asInstanceOf[ArrVisitor[Any, Z]]
+      override def map[A](f: Z => A): Reader[A] & Visitor[T, A] = new Reader.MapReader[T, Z, A](MapReader.this) {
+        def mapNonNullsFunction(z: Z): A = f(z)
+      }
+      override def mapNulls[A](f: Z => A): Reader[A] & Visitor[T, A] = new Reader.MapReader[T, Z, A](MapReader.this) {
+        override def mapFunction(z: Z): A = f(z)
+        def mapNonNullsFunction(z: Z): A = f(z)
+      }
     }
     def merge[T](readers0: Reader[_ <: T]*) = {
       new TaggedReader.Node(readers0.asInstanceOf[Seq[TaggedReader[T]]]:_*)
