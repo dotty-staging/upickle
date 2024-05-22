@@ -97,10 +97,10 @@ object DerivationTests extends TestSuite {
     test("readWriter") - {
       val rw = summon[ReadWriter[Animal]]
       val person = Person("Peter", "Somewhere", 30)
-      val json = write(person)(rw)
+      val json = write(person)(using rw)
       val expectedJson = """{"$type":"upickle.Person","name":"Peter","address":"Somewhere","age":30}"""
       assert(json == expectedJson)
-      val deserialized = read(json)(rw)
+      val deserialized = read(json)(using rw)
       val expectedDeserialized = Person("Peter", "Somewhere", 30)
       assert(deserialized == expectedDeserialized)
     }
